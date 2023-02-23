@@ -4,37 +4,45 @@ using static Microsoft.AspNetCore.Http.Results;
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
 
-app.MapPost("/domo/{ip}/{id}", Post);
+var execute = new Execute();
+
+app.MapGet("/domo", () => execute.CT);
+app.MapPost("/domo/{ip}/{id}", execute.Post);
 
 app.Run();
 
-static async Task<IResult> Post(string ip, int id, [FromQuery]int ct, [FromQuery]double bri)
+class Execute
 {
-    Console.WriteLine($"Connected ip={ip}, id={id}, ct={ct}, bri={bri}");
-    try
+    public int CT { get; private set; } = 6500;
+    public async Task<IResult> Post(string ip, int id, [FromQuery]int ct, [FromQuery]double bri)
     {
-        var level = await new HttpClient()
-            .GetAsync($"http://{ip}/json.htm?type=devices&rid={id}",
-                new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token);
-        Return? json = level.IsSuccessStatusCode ? await level.Content.ReadFromJsonAsync<Return>() : null;
-        if (json is { status: "OK", result: [{ Data: "Off" } or { Status: "Off" }] })
+        Console.WriteLine($"Connected ip={ip}, id={id}, ct={ct}, bri={bri}");
+        CT = ct;
+        try
+        {
+            var level = await new HttpClient()
+                .GetAsync($"http://{ip}/json.htm?type=devices&rid={id}",
+                    new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token);
+            Return? json = level.IsSuccessStatusCode ? await level.Content.ReadFromJsonAsync<Return>() : null;
+            if (json is { status: "OK", result: [{ Data: "Off" } or { Status: "Off" }] })
+                return Ok();
+            var resp = await new HttpClient()
+                .GetAsync($"http://{ip}/json.htm?type=command&param=setkelvinlevel&idx={id}&kelvin={ct/65/2+50}",
+                    new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token);
+            if (resp is { IsSuccessStatusCode: false, StatusCode: var code })
+                return StatusCode((int)code);
+            Console.WriteLine("OK");
             return Ok();
-        var resp = await new HttpClient()
-            .GetAsync($"http://{ip}/json.htm?type=command&param=setkelvinlevel&idx={id}&kelvin={ct/65/2+50}",
-                new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token);
-        if (resp is { IsSuccessStatusCode: false, StatusCode: var code })
-            return StatusCode((int)code);
-        Console.WriteLine("OK");
-        return Ok();
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"catch {ex}");
-        return Microsoft.AspNetCore.Http.Results.Problem(title: ex.GetType().FullName, detail: ex.ToString());
-    }
-    finally
-    {
-        Console.WriteLine("Disconnected");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"catch {ex}");
+            return Microsoft.AspNetCore.Http.Results.Problem(title: ex.GetType().FullName, detail: ex.ToString());
+        }
+        finally
+        {
+            Console.WriteLine("Disconnected");
+        }
     }
 }
 
