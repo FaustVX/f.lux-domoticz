@@ -13,6 +13,12 @@ static async Task<IResult> Post(string ip, int id, [FromQuery]int ct, [FromQuery
     Console.WriteLine($"Connected ip={ip}, id={id}, ct={ct}, bri={bri}");
     try
     {
+        var level = await new HttpClient()
+            .GetAsync($"http://{ip}/json.htm?type=devices&rid={id}",
+                new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token);
+        Return? json = level.IsSuccessStatusCode ? await level.Content.ReadFromJsonAsync<Return>() : null;
+        if (json is { status: "OK", result: [{ Data: "Off" } or { Status: "Off" }] })
+            return Ok();
         var resp = await new HttpClient()
             .GetAsync($"http://{ip}/json.htm?type=command&param=setkelvinlevel&idx={id}&kelvin={ct/65/2+50}",
                 new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token);
@@ -31,3 +37,6 @@ static async Task<IResult> Post(string ip, int id, [FromQuery]int ct, [FromQuery
         Console.WriteLine("Disconnected");
     }
 }
+
+readonly record struct Result(string Data, string Status);
+readonly record struct Return(Result[] result, string status);
