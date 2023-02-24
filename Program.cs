@@ -5,15 +5,15 @@ using static Microsoft.AspNetCore.Http.Results;
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
 
-var execute = new Execute();
+var domo = new Domoticz();
 
-app.MapGet("/domo", () => execute.Brightness);
-app.MapPost("/domo/{ip}/{id}", execute.SetBrightness);
-app.MapPost("/domo/setLight", execute.SetLight);
+app.MapGet("/domo", () => domo);
+app.MapPost("/domo/{ip}/{id}", domo.SetBrightness);
+app.MapPost("/domo/setLight", domo.SetLight);
 
 app.Run();
 
-class Execute
+class Domoticz
 {
     private static string Print<T>(T value, [CallerArgumentExpression(nameof(value))]string expr = null!)
     => $"{expr}={value}";
