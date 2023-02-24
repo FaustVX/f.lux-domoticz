@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Microsoft.AspNetCore.Mvc;
 using static Microsoft.AspNetCore.Http.Results;
 
@@ -13,11 +14,14 @@ app.Run();
 
 class Execute
 {
+    private static string Print<T>(T value, [CallerArgumentExpression(nameof(value))]string expr = null!)
+    => $"{expr}={value}";
+
     public int Brightness { get; private set; } = 50;
     public async Task<IResult> Post(string ip, int id, [FromQuery]int ct, [FromQuery]double bri)
     {
-        Console.WriteLine($"Connected ip={ip}, id={id}, ct={ct}, bri={bri}");
         Brightness = (int)((1 - bri) * 50) + 50;
+        Console.WriteLine($"Connected: {Print(ip)}, {Print(id)}, {Print(ct)}, {Print(bri)}, {Print(Brightness)}");
         try
         {
             var level = await new HttpClient()
