@@ -20,10 +20,15 @@ class Execute
 
     public int Brightness { get; private set; } = 50;
     public bool IsOn { get; private set; } = false;
-    public async Task<IResult> SetBrightness(string ip, int id, [FromQuery]int ct, [FromQuery]double bri)
+    public Task<IResult> SetBrightness(string ip, int id, [FromQuery]int ct, [FromQuery]double bri)
     {
         Brightness = (int)((1 - bri) * 50) + 50;
-        Console.WriteLine($"Connected: {Print(ip)}, {Print(id)}, {Print(ct)}, {Print(bri)}, {Print(Brightness)}");
+        return SetBrightness(ip, id);
+    }
+
+    private async Task<IResult> SetBrightness(string ip, int id)
+    {
+        Console.WriteLine($"Connected: {Print(ip)}, {Print(id)}, {Print(Brightness)}");
         try
         {
             if (!IsOn)
@@ -47,11 +52,14 @@ class Execute
         }
     }
 
-    public IResult SetLight([FromQuery]int value, [FromQuery]Target target)
+    public async Task<IResult> SetLight([FromQuery]int value, [FromQuery]Target target, [FromQuery]int id)
     {
+        var previous = IsOn;
         if (target is Target.Status)
             IsOn = value != 0;
         Console.WriteLine(Print(IsOn));
+        if (!previous && IsOn)
+            return await SetBrightness("192.168.1.55:90", id);
         return Ok(Print(IsOn));
     }
 
