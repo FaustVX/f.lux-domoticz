@@ -6,18 +6,18 @@ var app = builder.Build();
 
 var execute = new Execute();
 
-app.MapGet("/domo", () => execute.CT);
+app.MapGet("/domo", () => execute.Brightness);
 app.MapPost("/domo/{ip}/{id}", execute.Post);
 
 app.Run();
 
 class Execute
 {
-    public int CT { get; private set; } = 6500;
+    public int Brightness { get; private set; } = 50;
     public async Task<IResult> Post(string ip, int id, [FromQuery]int ct, [FromQuery]double bri)
     {
         Console.WriteLine($"Connected ip={ip}, id={id}, ct={ct}, bri={bri}");
-        CT = ct;
+        Brightness = (int)((1 - bri) * 50) + 50;
         try
         {
             var level = await new HttpClient()
@@ -27,7 +27,7 @@ class Execute
             if (json is { status: "OK", result: [{ Data: "Off" } or { Status: "Off" }] })
                 return Ok();
             var resp = await new HttpClient()
-                .GetAsync($"http://{ip}/json.htm?type=command&param=setkelvinlevel&idx={id}&kelvin={ct/65/2+50}",
+                .GetAsync($"http://{ip}/json.htm?type=command&param=setkelvinlevel&idx={id}&kelvin={Brightness}",
                     new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token);
             if (resp is { IsSuccessStatusCode: false, StatusCode: var code })
                 return StatusCode((int)code);
@@ -44,7 +44,7 @@ class Execute
             Console.WriteLine("Disconnected");
         }
     }
-}
 
-readonly record struct Result(string Data, string Status);
-readonly record struct Return(Result[] result, string status);
+    readonly record struct Result(string Data, string Status);
+    readonly record struct Return(Result[] result, string status);
+}
