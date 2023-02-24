@@ -20,7 +20,7 @@ class Domoticz
 
     public int Brightness { get; private set; } = 50;
     public bool IsOn { get; private set; } = false;
-    public RotaryList<string> Logs { get; } = new(15);
+    public RotaryList<Log<string>> Logs { get; } = new(15);
 
     public Task<IResult> SetBrightness(string ip, int id, [FromQuery]int ct, [FromQuery]double bri)
     {
@@ -31,7 +31,7 @@ class Domoticz
     private void Log(string log)
     {
         Console.WriteLine(log);
-        Logs.Add(log);
+        Logs.Add(new() { Value = log });
     }
 
     private async Task<IResult> SetBrightness(string ip, int id)
