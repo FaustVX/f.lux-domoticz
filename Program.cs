@@ -43,7 +43,7 @@ class Domoticz
                 return Ok();
             var resp = await new HttpClient()
                 .GetAsync($"http://{ip}/json.htm?type=command&param=setkelvinlevel&idx={id}&kelvin={Brightness}",
-                    new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token);
+                    new CancellationTokenSource(TimeSpan.FromSeconds(3)).Token);
             if (resp is { IsSuccessStatusCode: false, StatusCode: var code })
                 return StatusCode((int)code);
             Log("OK");
