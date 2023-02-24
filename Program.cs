@@ -51,6 +51,7 @@ class Execute
     {
         if (target is Target.Status)
             IsOn = value != 0;
+        Console.WriteLine(Print(IsOn));
         return Ok();
     }
 
