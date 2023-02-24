@@ -1,0 +1,11 @@
+[Unit]
+Description=f.lux > domoticz deamon.
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/flux
+WorkingDirectory=/home/pi/dev/f.lux-domoticz/bin/Release/net7.0/linux-arm/publish
+User=pi
+
+[Install]
+WantedBy=multi-user.target
