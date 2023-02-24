@@ -8,7 +8,7 @@ var app = builder.Build();
 var execute = new Execute();
 
 app.MapGet("/domo", () => execute.Brightness);
-app.MapPost("/domo/{ip}/{id}", execute.Post);
+app.MapPost("/domo/{ip}/{id}", execute.SetBrightness);
 app.MapPost("/domo/setLight", execute.SetLight);
 
 app.Run();
@@ -20,7 +20,7 @@ class Execute
 
     public int Brightness { get; private set; } = 50;
     public bool IsOn { get; private set; } = false;
-    public async Task<IResult> Post(string ip, int id, [FromQuery]int ct, [FromQuery]double bri)
+    public async Task<IResult> SetBrightness(string ip, int id, [FromQuery]int ct, [FromQuery]double bri)
     {
         Brightness = (int)((1 - bri) * 50) + 50;
         Console.WriteLine($"Connected: {Print(ip)}, {Print(id)}, {Print(ct)}, {Print(bri)}, {Print(Brightness)}");
