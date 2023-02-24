@@ -20,15 +20,23 @@ class Domoticz
 
     public int Brightness { get; private set; } = 50;
     public bool IsOn { get; private set; } = false;
+    public RotaryList<string> Logs { get; } = new(15);
+
     public Task<IResult> SetBrightness(string ip, int id, [FromQuery]int ct, [FromQuery]double bri)
     {
         Brightness = (int)((1 - bri) * 50) + 50;
         return SetBrightness(ip, id);
     }
 
+    private void Log(string log)
+    {
+        Console.WriteLine(log);
+        Logs.Add(log);
+    }
+
     private async Task<IResult> SetBrightness(string ip, int id)
     {
-        Console.WriteLine($"Connected: {Print(ip)}, {Print(id)}, {Print(Brightness)}");
+        Log($"Connected: {Print(ip)}, {Print(id)}, {Print(Brightness)}");
         try
         {
             if (!IsOn)
@@ -38,17 +46,17 @@ class Domoticz
                     new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token);
             if (resp is { IsSuccessStatusCode: false, StatusCode: var code })
                 return StatusCode((int)code);
-            Console.WriteLine("OK");
+            Log("OK");
             return Ok();
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"catch {ex}");
+            Log($"catch {ex}");
             return Microsoft.AspNetCore.Http.Results.Problem(title: ex.GetType().FullName, detail: ex.ToString());
         }
         finally
         {
-            Console.WriteLine("Disconnected");
+            Log("Disconnected");
         }
     }
 
@@ -57,7 +65,7 @@ class Domoticz
         var previous = IsOn;
         if (target is Target.Status)
             IsOn = value != 0;
-        Console.WriteLine(Print(IsOn));
+        Log(Print(IsOn));
         if (!previous && IsOn)
             return await SetBrightness("raspiplex.lan:90", id);
         return Ok(Print(IsOn));
