@@ -59,7 +59,7 @@ class Execute
             IsOn = value != 0;
         Console.WriteLine(Print(IsOn));
         if (!previous && IsOn)
-            return await SetBrightness("192.168.1.55:90", id);
+            return await SetBrightness("raspiplex.lan:90", id);
         return Ok(Print(IsOn));
     }
 
