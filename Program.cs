@@ -9,6 +9,7 @@ var execute = new Execute();
 
 app.MapGet("/domo", () => execute.Brightness);
 app.MapPost("/domo/{ip}/{id}", execute.Post);
+app.MapPost("/domo/setLight", execute.SetLight);
 
 app.Run();
 
@@ -18,17 +19,14 @@ class Execute
     => $"{expr}={value}";
 
     public int Brightness { get; private set; } = 50;
+    public bool IsOn { get; private set; } = false;
     public async Task<IResult> Post(string ip, int id, [FromQuery]int ct, [FromQuery]double bri)
     {
         Brightness = (int)((1 - bri) * 50) + 50;
         Console.WriteLine($"Connected: {Print(ip)}, {Print(id)}, {Print(ct)}, {Print(bri)}, {Print(Brightness)}");
         try
         {
-            var level = await new HttpClient()
-                .GetAsync($"http://{ip}/json.htm?type=devices&rid={id}",
-                    new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token);
-            Return? json = level.IsSuccessStatusCode ? await level.Content.ReadFromJsonAsync<Return>() : null;
-            if (json is { status: "OK", result: [{ Data: "Off" } or { Status: "Off" }] })
+            if (!IsOn)
                 return Ok();
             var resp = await new HttpClient()
                 .GetAsync($"http://{ip}/json.htm?type=command&param=setkelvinlevel&idx={id}&kelvin={Brightness}",
@@ -49,6 +47,16 @@ class Execute
         }
     }
 
-    readonly record struct Result(string Data, string Status);
-    readonly record struct Return(Result[] result, string status);
+    public IResult SetLight([FromQuery]int value, [FromQuery]Target target)
+    {
+        if (target is Target.Status)
+            IsOn = value != 0;
+        return Ok();
+    }
+
+    public enum Target
+    {
+        Status,
+        Level,
+    }
 }
